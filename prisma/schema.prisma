@@ -1,0 +1,87 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Patient {
+  id          String   @id @default(cuid())
+  firstName   String
+  lastName    String
+  email       String   @unique
+  phone       String?
+  dateOfBirth DateTime
+  gender      String
+  address     String?
+  city        String?
+  state       String?
+  zipCode     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  appointments Appointment[]
+  medicalRecords MedicalRecord[]
+
+  @@map("patients")
+}
+
+model Doctor {
+  id           String   @id @default(cuid())
+  firstName    String
+  lastName     String
+  email        String   @unique
+  phone        String?
+  specialization String
+  licenseNumber String  @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  appointments Appointment[]
+  medicalRecords MedicalRecord[]
+
+  @@map("doctors")
+}
+
+model Appointment {
+  id        String   @id @default(cuid())
+  patientId String
+  doctorId  String
+  date      DateTime
+  duration  Int      @default(30) // minutes
+  status    String   @default("scheduled") // scheduled, completed, cancelled
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  patient Patient @relation(fields: [patientId], references: [id])
+  doctor  Doctor  @relation(fields: [doctorId], references: [id])
+
+  @@map("appointments")
+}
+
+model MedicalRecord {
+  id        String   @id @default(cuid())
+  patientId String
+  doctorId  String
+  diagnosis String
+  treatment String?
+  notes     String?
+  visitDate DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  patient Patient @relation(fields: [patientId], references: [id])
+  doctor  Doctor  @relation(fields: [doctorId], references: [id])
+
+  @@map("medical_records")
+}
