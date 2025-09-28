@@ -1,57 +1,64 @@
-import { NextResponse } from 'next/server'
-import { HealthCheckResponse } from '@/types'
-import { logInfo } from '@/lib/logger'
-import { asyncHandler } from '@/lib/errors'
+import { NextResponse } from "next/server";
+import { performance } from "perf_hooks";
 
-async function healthCheckHandler(): Promise<NextResponse> {
-  const startTime = Date.now()
-  
+import { respondWithError } from "@/lib/errors";
+import { pingDatabase } from "@/lib/mysql";
+import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
+import type { HealthIndicator, HealthResponse, HealthStatus } from "@/types/health";
+
+const DEGRADED_THRESHOLD_MS = 500;
+
+const determineStatus = (latency: number): HealthStatus => {
+  if (latency >= DEGRADED_THRESHOLD_MS) return "degraded";
+  return "ok";
+};
+
+export async function GET() {
   try {
-    const healthData: HealthCheckResponse = {
-      status: 'healthy',
+    const checks: HealthIndicator[] = [];
+
+    const mysqlResult = await pingDatabase();
+    checks.push({
+      component: "mysql",
+      status: determineStatus(mysqlResult.latencyMs),
+      latencyMs: mysqlResult.latencyMs,
+      checkedAt: new Date().toISOString(),
+    });
+
+    const prismaStart = performance.now();
+    await prisma.$queryRaw`SELECT 1`;
+    const prismaLatency = Math.round(performance.now() - prismaStart);
+    checks.push({
+      component: "prisma",
+      status: determineStatus(prismaLatency),
+      latencyMs: prismaLatency,
+      checkedAt: new Date().toISOString(),
+    });
+
+    const status: HealthStatus = checks.some((check) => check.status === "degraded")
+      ? "degraded"
+      : "ok";
+
+    const payload: HealthResponse = {
+      status,
       timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      database: {
-        connected: false, // Will be updated by db-health endpoint
-      },
-      version: process.env.npm_package_version || '1.0.0'
-    }
+      uptimeSec: Math.round(process.uptime()),
+      version: process.env.npm_package_version ?? "0.1.0",
+      checks,
+    };
 
-    const responseTime = Date.now() - startTime
+    logger.info({ payload }, "Health check executed");
 
-    logInfo('Health check performed', {
-      responseTime,
-      status: 'healthy'
-    })
-
-    return NextResponse.json(healthData, {
-      status: 200,
+    return NextResponse.json(payload, {
+      status: status === "ok" ? 200 : 503,
       headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
-      }
-    })
-  } catch {
-    const healthData: HealthCheckResponse = {
-      status: 'unhealthy',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      database: {
-        connected: false
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        Pragma: "no-cache",
+        Expires: "0",
       },
-      version: process.env.npm_package_version || '1.0.0'
-    }
-
-    return NextResponse.json(healthData, {
-      status: 503,
-      headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
-      }
-    })
+    });
+  } catch (error) {
+    return respondWithError(error);
   }
 }
-
-export const GET = asyncHandler(healthCheckHandler)

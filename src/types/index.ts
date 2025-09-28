@@ -66,6 +66,8 @@ export interface HealthCheckResponse {
   database: {
     connected: boolean
     responseTime?: number
+    mysqlLatencyMs?: number
+    prismaLatencyMs?: number
   }
   version: string
 }

@@ -1,141 +1,287 @@
+import Link from "next/link";
+import type { ReactNode } from "react";
+
+import { FeatureCard } from "@/components/ui/feature-card";
+import { StatCard } from "@/components/ui/stat-card";
+
+const stats = [
+	{
+		label: "Active Patients",
+		value: "12,481",
+		trend: {
+			value: "+12% vs last quarter",
+			isPositive: true,
+		},
+		icon: <ChartIcon />,
+	},
+	{
+		label: "Bed Occupancy",
+		value: "78%",
+		trend: {
+			value: "-5% week over week",
+			isPositive: false,
+		},
+		icon: <BedIcon />,
+	},
+	{
+		label: "On-time Appointments",
+		value: "96%",
+		trend: {
+			value: "+4 pts",
+			isPositive: true,
+		},
+		icon: <ClockIcon />,
+	},
+];
+
+const features = [
+	{
+		title: "Care orchestration",
+		description:
+			"Coordinate teams, automate escalations, and keep providers aligned with live care plans.",
+		icon: <HeartbeatIcon />,
+	},
+	{
+		title: "Revenue integrity",
+		description:
+			"Reduce denials with compliant charge capture, payer rules, and realtime reconciliation dashboards.",
+		icon: <ShieldIcon />,
+	},
+	{
+		title: "Clinical analytics",
+		description:
+			"Track outcomes, throughput, and acuity across facilities with predictive insights at the point of care.",
+		icon: <SparkleIcon />,
+	},
+];
+
 export default function Home() {
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold text-medical">MedCare</h1>
-          <p className="text-muted-foreground mt-2">Hospital Management System</p>
-        </div>
-      </header>
+	return (
+		<div className="relative isolate overflow-hidden">
+			<div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,var(--color-primary)/0.18,transparent_60%)]" />
+			<main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-20 px-6 pb-24 pt-24 sm:px-10 lg:px-12">
+				<section className="grid gap-12 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center">
+					<div className="space-y-8">
+						<span className="inline-flex items-center gap-2 rounded-full border border-outline/60 bg-surface px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-muted">
+							MEDCARE PLATFORM
+						</span>
+						<h1 className="text-balance text-4xl font-semibold text-foreground sm:text-5xl lg:text-6xl">
+							Streamline hospital operations with a composable digital backbone.
+						</h1>
+						<p className="max-w-xl text-pretty text-base text-muted-foreground sm:text-lg">
+							MedCare unifies clinical, operational, and financial workflows into a
+							single, secure workspace. Empower clinicians with curated insights
+							while ensuring administrators maintain compliance and healthy margins.
+						</p>
+						<div className="flex flex-wrap items-center gap-4">
+							<Link
+								href="/dashboard"
+								className="inline-flex items-center justify-center rounded-[var(--radius-pill)] bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-hard)] transition hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+							>
+								Launch command center
+							</Link>
+							<Link
+								href="/docs"
+								className="inline-flex items-center justify-center rounded-[var(--radius-pill)] border border-outline/60 bg-surface px-6 py-3 text-sm font-semibold text-foreground transition hover:border-primary/40 hover:text-primary"
+							>
+								View API documentation
+							</Link>
+						</div>
+						<div className="grid gap-6 sm:grid-cols-3">
+							{stats.map((stat) => (
+								<StatCard key={stat.label} {...stat} />
+							))}
+						</div>
+					</div>
+					<div className="relative isolate overflow-hidden rounded-[calc(var(--radius-lg)*1.2)] bg-gradient-to-br from-primary/90 via-secondary/80 to-accent/75 p-[2px] shadow-[var(--shadow-hard)]">
+						<div className="rounded-[calc(var(--radius-lg)*1.15)] bg-surface/95 px-8 py-10 shadow-inner">
+							<h2 className="text-xl font-semibold text-foreground">
+								System telemetry
+							</h2>
+							<p className="mt-2 text-sm text-muted-foreground">
+								Real-time visibility across every facility keeps your teams
+								proactive instead of reactive.
+							</p>
+							<ul className="mt-8 space-y-4 text-sm text-muted-foreground">
+								<TelemetryItem label="EHR availability" value="99.997%" positive />
+								<TelemetryItem label="Lab turnaround" value="&lt; 42m" />
+								<TelemetryItem label="Incident response" value="12 min MTTR" positive />
+							</ul>
+						</div>
+					</div>
+				</section>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        {/* Hero Section */}
-        <div className="medical-card p-8 mb-8">
-          <h2 className="text-2xl font-semibold text-foreground mb-4">
-            Welcome to MedCare
-          </h2>
-          <p className="text-muted-foreground mb-6">
-            A modern hospital management system built with Next.js 15, TypeScript, and Prisma.
-            Manage patients, appointments, medical records, and staff with ease.
-          </p>
-          
-          {/* Status Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <div className="medical-card p-4">
-              <h3 className="font-semibold text-stable mb-2">System Status</h3>
-              <p className="text-sm text-muted-foreground">All systems operational</p>
-            </div>
-            <div className="medical-card p-4">
-              <h3 className="font-semibold text-medical mb-2">Database</h3>
-              <p className="text-sm text-muted-foreground">MySQL 8.0+ with Prisma ORM</p>
-            </div>
-            <div className="medical-card p-4">
-              <h3 className="font-semibold text-info-500 mb-2">API Endpoints</h3>
-              <p className="text-sm text-muted-foreground">Health checks available</p>
-            </div>
-          </div>
+				<section className="space-y-12">
+					<header className="max-w-3xl space-y-4">
+						<h2 className="text-3xl font-semibold text-foreground sm:text-4xl">
+							Built for resilient, patient-centered operations
+						</h2>
+						<p className="text-base text-muted-foreground">
+							Designed with healthcare-grade security controls, audited workflows,
+							and guardrails that keep clinicians focused on care.
+						</p>
+					</header>
+					<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+						{features.map((feature) => (
+							<FeatureCard key={feature.title} {...feature} />
+						))}
+					</div>
+				</section>
 
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <a
-              href="/api/health"
-              className="medical-button px-6 py-3 text-center rounded-lg font-medium transition-all"
-            >
-              Check System Health
-            </a>
-            <a
-              href="/api/db-health"
-              className="px-6 py-3 text-center rounded-lg font-medium border border-border bg-card text-card-foreground hover:bg-muted transition-all"
-            >
-              Check Database Health
-            </a>
-          </div>
-        </div>
+				<section className="rounded-[var(--radius-lg)] border border-outline/50 bg-surface/80 p-10 shadow-[var(--shadow-soft)] backdrop-blur">
+					<div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+						<div className="space-y-2">
+							<h3 className="text-2xl font-semibold text-foreground">
+								Enterprise security baked in
+							</h3>
+							<p className="text-sm text-muted-foreground">
+								SOC 2 Type II, HIPAA, and HITRUST-aligned controls with full audit
+								trails. Granular RBAC, PHI masking, and environment isolation come
+								standard.
+							</p>
+						</div>
+						<Link
+							href="/compliance"
+							className="inline-flex items-center justify-center rounded-[var(--radius-pill)] border border-outline/60 px-5 py-3 text-sm font-semibold text-foreground transition hover:border-primary/50 hover:text-primary"
+						>
+							Review compliance framework
+						</Link>
+					</div>
+				</section>
 
-        {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="medical-card p-6">
-            <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mb-4">
-              <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </div>
-            <h3 className="font-semibold text-foreground mb-2">Patient Management</h3>
-            <p className="text-sm text-muted-foreground">Complete patient records and history management</p>
-          </div>
+				<section className="rounded-[var(--radius-lg)] border border-outline/60 bg-surface px-6 py-8 shadow-sm">
+					<div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+						<div>
+							<h3 className="text-lg font-semibold text-foreground">
+								Operational health at a glance
+							</h3>
+							<p className="text-sm text-muted-foreground">
+								Monitor platform availability with real-time API probes for
+								infrastructure and database connectivity.
+							</p>
+						</div>
+						<div className="flex flex-wrap gap-3">
+							<Link
+								href="/api/health"
+								className="inline-flex items-center justify-center rounded-[var(--radius-pill)] bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/20"
+							>
+								GET /api/health
+							</Link>
+							<Link
+								href="/api/db-health"
+								className="inline-flex items-center justify-center rounded-[var(--radius-pill)] border border-outline/60 px-4 py-2 text-sm font-semibold text-foreground transition hover:border-primary/40 hover:text-primary"
+							>
+								GET /api/db-health
+							</Link>
+						</div>
+					</div>
+				</section>
+			</main>
+		</div>
+	);
+}
 
-          <div className="medical-card p-6">
-            <div className="w-12 h-12 bg-secondary-100 rounded-lg flex items-center justify-center mb-4">
-              <svg className="w-6 h-6 text-secondary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <h3 className="font-semibold text-foreground mb-2">Appointments</h3>
-            <p className="text-sm text-muted-foreground">Efficient scheduling and booking system</p>
-          </div>
+function withStroke(icon: ReactNode) {
+	return (
+		<svg
+			aria-hidden
+			viewBox="0 0 24 24"
+			className="h-5 w-5 stroke-[1.5]"
+			fill="none"
+			stroke="currentColor"
+		>
+			{icon}
+		</svg>
+	);
+}
 
-          <div className="medical-card p-6">
-            <div className="w-12 h-12 bg-info-50 rounded-lg flex items-center justify-center mb-4">
-              <svg className="w-6 h-6 text-info-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <h3 className="font-semibold text-foreground mb-2">Medical Records</h3>
-            <p className="text-sm text-muted-foreground">Secure and comprehensive documentation</p>
-          </div>
+function ChartIcon() {
+	return withStroke(
+		<>
+			<path d="M4 19h16" />
+			<path d="M6 17V7" />
+			<path d="M12 17V5" />
+			<path d="M18 17v-8" />
+		</>,
+	);
+}
 
-          <div className="medical-card p-6">
-            <div className="w-12 h-12 bg-warning-50 rounded-lg flex items-center justify-center mb-4">
-              <svg className="w-6 h-6 text-warning-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-            </div>
-            <h3 className="font-semibold text-foreground mb-2">Staff Management</h3>
-            <p className="text-sm text-muted-foreground">Healthcare provider profiles and scheduling</p>
-          </div>
+function BedIcon() {
+	return withStroke(
+		<>
+			<path d="M5 9h14a3 3 0 0 1 3 3v7" />
+			<path d="M2 19h20" />
+			<path d="M2 9v10" />
+			<path d="M5 9V7a3 3 0 0 1 6 0v2" />
+		</>,
+	);
+}
 
-          <div className="medical-card p-6">
-            <div className="w-12 h-12 bg-success-50 rounded-lg flex items-center justify-center mb-4">
-              <svg className="w-6 h-6 text-success-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-            </div>
-            <h3 className="font-semibold text-foreground mb-2">Analytics</h3>
-            <p className="text-sm text-muted-foreground">Real-time insights and reporting dashboard</p>
-          </div>
+function ClockIcon() {
+	return withStroke(
+		<>
+			<circle cx="12" cy="12" r="9" />
+			<path d="M12 7v5l3 2" />
+		</>,
+	);
+}
 
-          <div className="medical-card p-6">
-            <div className="w-12 h-12 bg-error-50 rounded-lg flex items-center justify-center mb-4">
-              <svg className="w-6 h-6 text-error-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-              </svg>
-            </div>
-            <h3 className="font-semibold text-foreground mb-2">Billing</h3>
-            <p className="text-sm text-muted-foreground">Integrated billing and insurance processing</p>
-          </div>
-        </div>
-      </main>
+function HeartbeatIcon() {
+	return withStroke(
+		<>
+			<path d="M20.8 9a5 5 0 0 0-8.8-3.2L12 6.8l-.01-.01A5 5 0 0 0 3.2 9c-.47 3.76 2.4 7.05 5.6 9.55a4.18 4.18 0 0 0 5.4 0c3.2-2.5 6.07-5.79 5.6-9.55Z" />
+			<path d="m8 13 2-2 2 3 2-2 2 2" />
+		</>,
+	);
+}
 
-      {/* Footer */}
-      <footer className="border-t border-border bg-card mt-16">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex flex-col sm:flex-row justify-between items-center">
-            <p className="text-sm text-muted-foreground mb-4 sm:mb-0">
-              © 2024 MedCare. Built with Next.js 15, TypeScript, and Prisma.
-            </p>
-            <div className="flex space-x-4">
-              <span className="text-xs text-muted-foreground">
-                Health checks: <a href="/api/health" className="text-medical hover:underline">/api/health</a>
-              </span>
-              <span className="text-xs text-muted-foreground">
-                Database: <a href="/api/db-health" className="text-medical hover:underline">/api/db-health</a>
-              </span>
-            </div>
-          </div>
-        </div>
-      </footer>
-    </div>
-  );
+function ShieldIcon() {
+	return withStroke(
+		<>
+			<path d="M12 22c4.97-3.35 8-6.28 8-10.5V5l-8-3-8 3v6.5C4 15.72 7.03 18.65 12 22Z" />
+			<path d="m9 12 2 2 4-4" />
+		</>,
+	);
+}
+
+function SparkleIcon() {
+	return withStroke(
+		<>
+			<path d="M12 3v4" />
+			<path d="M5.2 5.2 8 8" />
+			<path d="M3 12h4" />
+			<path d="M5.2 18.8 8 16" />
+			<path d="M12 21v-4" />
+			<path d="m18.8 18.8-2.8-2.8" />
+			<path d="M21 12h-4" />
+			<path d="m18.8 5.2-2.8 2.8" />
+			<circle cx="12" cy="12" r="3" />
+		</>,
+	);
+}
+
+function TelemetryItem({
+	label,
+	value,
+	positive,
+}: {
+	label: string;
+	value: string;
+	positive?: boolean;
+}) {
+	return (
+		<li className="flex items-center justify-between gap-3 rounded-[var(--radius-base)] border border-outline/40 bg-surface px-4 py-3">
+			<div className="flex items-center gap-3 text-sm font-medium text-muted-foreground">
+				<span className="inline-flex h-2.5 w-2.5 rounded-full bg-primary shadow-[0_0_0_4px_rgba(14,165,233,0.15)]" />
+				{label}
+			</div>
+			<span
+				className={`text-sm font-semibold ${
+					positive ? "text-success" : "text-primary-strong"
+				}`}
+			>
+				{value}
+			</span>
+		</li>
+	);
 }

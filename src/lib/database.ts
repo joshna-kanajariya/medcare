@@ -1,55 +1,20 @@
-// Mock Prisma client for build when engines are not available
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let prismaClient: any
+import "server-only";
 
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { PrismaClient } = require('@prisma/client')
-  prismaClient = new PrismaClient({
-    log: ['query', 'error', 'warn'],
-    datasources: {
-      db: {
-        url: process.env.DATABASE_URL,
-      },
-    },
-  })
-} catch {
-  // Fallback mock client for build time
-  prismaClient = {
-    $queryRaw: () => Promise.resolve([{ '1': 1 }]),
-    $disconnect: () => Promise.resolve(),
-  }
-}
+import { prisma } from "./prisma";
+import { logError } from "./logger";
 
-declare global {
-  var prisma: typeof prismaClient | undefined
-}
+export { prisma };
 
-export const prisma = globalThis.prisma ?? prismaClient
-
-if (process.env.NODE_ENV !== 'production') globalThis.prisma = prisma
-
-// Connection pool configuration
-export const dbConfig = {
-  connectionLimit: 10,
-  acquireTimeout: 60000,
-  timeout: 60000,
-  reconnect: true,
-  multipleStatements: false,
-}
-
-// Test database connection
-export async function testDatabaseConnection(): Promise<boolean> {
+export const testDatabaseConnection = async () => {
   try {
-    await prisma.$queryRaw`SELECT 1`
-    return true
+    await prisma.$queryRaw`SELECT 1`;
+    return true;
   } catch (error) {
-    console.error('Database connection failed:', error)
-    return false
+    logError("Database connection failed", error instanceof Error ? error : { error });
+    return false;
   }
-}
+};
 
-// Graceful shutdown
-export async function disconnectDatabase(): Promise<void> {
-  await prisma.$disconnect()
-}
+export const disconnectDatabase = async () => {
+  await prisma.$disconnect();
+};

@@ -1,140 +1,134 @@
-import { NextResponse } from 'next/server'
-import { ZodError } from 'zod'
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
-import { logError } from './logger'
+import "server-only";
+
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
+import { NextResponse } from "next/server";
+import { ZodError } from "zod";
+
+import { logger } from "./logger";
 
 export class AppError extends Error {
-  statusCode: number
-  isOperational: boolean
+  public readonly status: number;
+  public readonly code: string;
+  public readonly details?: unknown;
 
-  constructor(message: string, statusCode: number = 500) {
-    super(message)
-    this.statusCode = statusCode
-    this.isOperational = true
-
-    Error.captureStackTrace(this, this.constructor)
+  constructor({
+    message,
+    status = 500,
+    code = "INTERNAL_ERROR",
+    details,
+    cause,
+  }: {
+    message: string;
+    status?: number;
+    code?: string;
+    details?: unknown;
+    cause?: unknown;
+  }) {
+    super(message, { cause });
+    this.name = "AppError";
+    this.status = status;
+    this.code = code;
+    this.details = details;
   }
 }
 
-export class ValidationError extends AppError {
-  constructor(message: string) {
-    super(message, 400)
+export const normalizeError = (error: unknown): AppError => {
+  if (error instanceof AppError) {
+    return error;
   }
-}
 
-export class NotFoundError extends AppError {
-  constructor(message: string = 'Resource not found') {
-    super(message, 404)
-  }
-}
-
-export class UnauthorizedError extends AppError {
-  constructor(message: string = 'Unauthorized access') {
-    super(message, 401)
-  }
-}
-
-export class ConflictError extends AppError {
-  constructor(message: string) {
-    super(message, 409)
-  }
-}
-
-// Error response formatter
-interface ErrorResponse {
-  error: string
-  message: string
-  statusCode: number
-  details?: unknown
-}
-
-export function formatErrorResponse(error: unknown): ErrorResponse {
-  // Handle Zod validation errors
   if (error instanceof ZodError) {
-    return {
-      error: 'Validation Error',
-      message: 'Invalid input data',
-      statusCode: 400,
-      details: error.errors.map(err => ({
-        field: err.path.join('.'),
-        message: err.message
-      }))
-    }
+    return new AppError({
+      message: "Validation failed",
+      status: 400,
+      code: "BAD_REQUEST",
+      details: error.flatten(),
+      cause: error,
+    });
   }
 
-  // Handle Prisma errors
   if (error instanceof PrismaClientKnownRequestError) {
     switch (error.code) {
-      case 'P2002':
-        return {
-          error: 'Conflict Error',
-          message: 'A record with this data already exists',
-          statusCode: 409
-        }
-      case 'P2025':
-        return {
-          error: 'Not Found',
-          message: 'The requested record was not found',
-          statusCode: 404
-        }
+      case "P2002":
+        return new AppError({
+          message: "Unique constraint violation",
+          status: 409,
+          code: "CONFLICT",
+          details: { target: error.meta?.target },
+          cause: error,
+        });
+      case "P2025":
+        return new AppError({
+          message: "Requested record was not found",
+          status: 404,
+          code: "NOT_FOUND",
+          cause: error,
+        });
       default:
-        logError('Prisma error', error)
-        return {
-          error: 'Database Error',
-          message: 'A database error occurred',
-          statusCode: 500
-        }
+        return new AppError({
+          message: "Database request failed",
+          status: 500,
+          code: "DATABASE_ERROR",
+          details: { code: error.code, meta: error.meta },
+          cause: error,
+        });
     }
   }
 
-  // Handle custom app errors
-  if (error instanceof AppError) {
-    return {
-      error: error.constructor.name,
-      message: error.message,
-      statusCode: error.statusCode
-    }
-  }
-
-  // Handle generic errors
   if (error instanceof Error) {
-    logError('Unexpected error', error)
-    return {
-      error: 'Internal Server Error',
-      message: process.env.NODE_ENV === 'production' 
-        ? 'An unexpected error occurred' 
-        : error.message,
-      statusCode: 500
-    }
+    return new AppError({
+      message: error.message,
+      status: 500,
+      code: "UNEXPECTED_ERROR",
+      cause: error,
+    });
   }
 
-  // Fallback for unknown error types
-  logError('Unknown error type', error instanceof Error ? error : { error })
-  return {
-    error: 'Internal Server Error',
-    message: 'An unexpected error occurred',
-    statusCode: 500
-  }
-}
+  return new AppError({
+    message: "An unknown error occurred",
+    status: 500,
+    code: "UNKNOWN",
+    details: error,
+  });
+};
 
-// API error handler wrapper
-export function handleApiError(error: unknown): NextResponse {
-  const errorResponse = formatErrorResponse(error)
-  
-  return NextResponse.json(errorResponse, {
-    status: errorResponse.statusCode
-  })
-}
+export const respondWithError = (error: unknown) => {
+  const normalized = normalizeError(error);
 
-// Async handler wrapper for API routes
-export function asyncHandler(
-  handler: (req: Request, context?: unknown) => Promise<NextResponse>
-) {
-  return async (req: Request, context?: unknown): Promise<NextResponse> => {
+  logger.error(
+    {
+      error: {
+        name: normalized.name,
+        message: normalized.message,
+        code: normalized.code,
+        status: normalized.status,
+        details: normalized.details,
+      },
+    },
+    "Request failed",
+  );
+
+  return NextResponse.json(
+    {
+      ok: false,
+      error: {
+        code: normalized.code,
+        message: normalized.message,
+        details: normalized.details,
+      },
+    },
+    { status: normalized.status },
+  );
+};
+
+export const asyncHandler = <T extends (...args: unknown[]) => Promise<NextResponse>>(
+  handler: T,
+) => {
+  return (async (...args: Parameters<T>) => {
     try {
-      return await handler(req, context)
+      return await handler(...args);
     } catch (error) {
-      return handleApiError(error)
+      return respondWithError(error);
     }
-  }
-}
+  }) as T;
+};

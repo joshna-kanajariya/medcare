@@ -1,8 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -10,78 +8,111 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Patient {
-  id          String   @id @default(cuid())
-  firstName   String
-  lastName    String
-  email       String   @unique
-  phone       String?
-  dateOfBirth DateTime
-  gender      String
+model Hospital {
+  id          Int          @id @default(autoincrement())
+  name        String
   address     String?
-  city        String?
-  state       String?
-  zipCode     String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  phone       String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  departments Department[]
+}
 
-  // Relations
+model Department {
+  id          Int          @id @default(autoincrement())
+  name        String
+  hospitalId  Int
+  contact     String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  hospital    Hospital     @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  doctors     Doctor[]
   appointments Appointment[]
+}
+
+model Patient {
+  id             String        @id @default(cuid())
+  hospitalId     Int?
+  firstName      String
+  lastName       String
+  dateOfBirth    DateTime
+  email          String?       @unique
+  phone          String?
+  gender         String?
+  address        String?
+  emergencyContact String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  appointments   Appointment[]
   medicalRecords MedicalRecord[]
+  hospital       Hospital?     @relation(fields: [hospitalId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   @@map("patients")
 }
 
-model Doctor {
-  id           String   @id @default(cuid())
-  firstName    String
-  lastName     String
-  email        String   @unique
-  phone        String?
-  specialization String
-  licenseNumber String  @unique
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  // Relations
-  appointments Appointment[]
-  medicalRecords MedicalRecord[]
-
-  @@map("doctors")
-}
-
 model Appointment {
-  id        String   @id @default(cuid())
-  patientId String
-  doctorId  String
-  date      DateTime
-  duration  Int      @default(30) // minutes
-  status    String   @default("scheduled") // scheduled, completed, cancelled
-  notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String             @id @default(cuid())
+  patientId      String
+  doctorId       String
+  departmentId   Int?
+  hospitalId     Int?
+  scheduledFor   DateTime
+  duration       Int                @default(30)
+  status         AppointmentStatus  @default(SCHEDULED)
+  reason         String?
+  notes          String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
 
-  // Relations
-  patient Patient @relation(fields: [patientId], references: [id])
-  doctor  Doctor  @relation(fields: [doctorId], references: [id])
+  patient        Patient            @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor         Doctor             @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  department     Department?        @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  hospital       Hospital?          @relation(fields: [hospitalId], references: [id], onDelete: SetNull)
 
   @@map("appointments")
 }
 
-model MedicalRecord {
-  id        String   @id @default(cuid())
-  patientId String
-  doctorId  String
-  diagnosis String
-  treatment String?
-  notes     String?
-  visitDate DateTime
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+enum AppointmentStatus {
+  SCHEDULED
+  CHECKED_IN
+  COMPLETED
+  CANCELLED
+}
 
-  // Relations
-  patient Patient @relation(fields: [patientId], references: [id])
-  doctor  Doctor  @relation(fields: [doctorId], references: [id])
+model Doctor {
+  id             String       @id @default(cuid())
+  hospitalId     Int?
+  departmentId   Int?
+  firstName      String
+  lastName       String
+  email          String       @unique
+  phone          String?
+  specialization String
+  licenseNumber  String       @unique
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  appointments   Appointment[]
+  medicalRecords MedicalRecord[]
+  hospital       Hospital?    @relation(fields: [hospitalId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  department     Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@map("doctors")
+}
+
+model MedicalRecord {
+  id         String   @id @default(cuid())
+  patientId  String
+  doctorId   String
+  diagnosis  String
+  treatment  String?
+  notes      String?
+  visitDate  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor  Doctor  @relation(fields: [doctorId], references: [id], onDelete: Cascade)
 
   @@map("medical_records")
 }

@@ -1,8 +1,17 @@
 import { useState, useEffect } from 'react'
-import { HealthCheckResponse } from '@/types'
 
-export function useHealthCheck(endpoint: string, intervalMs: number = 30000) {
-  const [health, setHealth] = useState<HealthCheckResponse | null>(null)
+import type { HealthResponse } from '@/types/health'
+import type { HealthCheckResponse } from '@/types'
+
+type HealthResult<T> = {
+  health: T | null
+  loading: boolean
+  error: string | null
+  isHealthy: boolean
+}
+
+export function useHealthCheck<T>(endpoint: string, intervalMs = 30000): HealthResult<T> {
+  const [health, setHealth] = useState<T | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -11,12 +20,12 @@ export function useHealthCheck(endpoint: string, intervalMs: number = 30000) {
       try {
         setLoading(true)
         const response = await fetch(endpoint)
-        
+
         if (!response.ok) {
           throw new Error(`Health check failed with status: ${response.status}`)
         }
-        
-        const data: HealthCheckResponse = await response.json()
+
+        const data: T = await response.json()
         setHealth(data)
         setError(null)
       } catch (err) {
@@ -36,13 +45,21 @@ export function useHealthCheck(endpoint: string, intervalMs: number = 30000) {
     return () => clearInterval(interval)
   }, [endpoint, intervalMs])
 
-  return { health, loading, error, isHealthy: health?.status === 'healthy' }
+  const status = (health as { status?: string } | null)?.status
+  const isHealthy = status === 'healthy' || status === 'ok'
+
+  return {
+    health,
+    loading,
+    error,
+    isHealthy,
+  }
 }
 
 export function useDatabaseHealth(intervalMs: number = 30000) {
-  return useHealthCheck('/api/db-health', intervalMs)
+  return useHealthCheck<HealthCheckResponse>('/api/db-health', intervalMs)
 }
 
 export function useSystemHealth(intervalMs: number = 30000) {
-  return useHealthCheck('/api/health', intervalMs)
+  return useHealthCheck<HealthResponse>('/api/health', intervalMs)
 }
