@@ -8,7 +8,7 @@ import { AuditLogger } from "@/lib/auth/audit";
 import { logger } from "@/lib/logger";
 import type { UserRole } from "@/generated/prisma";
 
-const handler = NextAuth({
+export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     // Credentials provider for email/password login
     CredentialsProvider({
@@ -71,67 +71,12 @@ const handler = NextAuth({
       },
     }),
 
-    // Phone OTP provider (custom implementation)
-    CredentialsProvider({
-      id: "phone-otp",
-      name: "Phone OTP",
-      credentials: {
-        phone: { label: "Phone", type: "text" },
-        otp: { label: "OTP Code", type: "text" },
-      },
-      async authorize(credentials) {
-        if (!credentials?.phone || !credentials?.otp) {
-          return null;
-        }
-
-        try {
-          // Verify OTP (implementation depends on your OTP storage strategy)
-          const user = await prisma.user.findUnique({
-            where: { phone: credentials.phone },
-            include: {
-              userProfiles: true,
-            },
-          });
-
-          if (!user || !user.isActive) {
-            return null;
-          }
-
-          // In a real implementation, verify OTP against stored value
-          // This is a simplified version
-          
-          await prisma.user.update({
-            where: { id: user.id },
-            data: { lastLoginAt: new Date() },
-          });
-
-          return {
-            id: user.id,
-            email: user.email,
-            role: user.role,
-            isVerified: user.isVerified,
-            profile: user.userProfiles,
-          };
-        } catch (error) {
-          logger.error({ error }, "Phone OTP authentication error");
-          return null;
-        }
-      },
-    }),
-
     // Google OAuth provider
     ...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
       ? [
           GoogleProvider({
             clientId: env.GOOGLE_CLIENT_ID,
             clientSecret: env.GOOGLE_CLIENT_SECRET,
-            authorization: {
-              params: {
-                prompt: "consent",
-                access_type: "offline",
-                response_type: "code",
-              },
-            },
           }),
         ]
       : []),
@@ -143,7 +88,7 @@ const handler = NextAuth({
   },
 
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account }) {
       try {
         // Additional sign-in validation
         if (account?.provider === "google") {
@@ -168,12 +113,10 @@ const handler = NextAuth({
 
     async jwt({ token, user }) {
       if (user) {
-        // First sign in
         token.role = (user as any).role;
         token.userId = user.id;
         token.isVerified = (user as any).isVerified;
       }
-
       return token;
     },
 
@@ -212,10 +155,9 @@ const handler = NextAuth({
   },
 
   events: {
-    async signIn({ user, account }) {
+    async signIn({ user }) {
       await AuditLogger.logAuth("LOGIN", user.id, {
         userRole: (user as any).role,
-        ipAddress: "unknown", // Will be enriched by middleware
       });
     },
   },
@@ -225,12 +167,5 @@ const handler = NextAuth({
     maxAge: env.SESSION_MAX_AGE,
   },
 
-  jwt: {
-    secret: env.NEXTAUTH_SECRET,
-    maxAge: env.SESSION_MAX_AGE,
-  },
-
   debug: env.NODE_ENV === "development",
 });
-
-export { handler as GET, handler as POST };
