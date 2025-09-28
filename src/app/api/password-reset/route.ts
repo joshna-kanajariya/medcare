@@ -52,8 +52,8 @@ export async function POST(request: NextRequest) {
         resourceId: user.id,
         context: {
           userId: user.id,
-          ipAddress: request.ip,
-          userAgent: request.headers.get("user-agent"),
+          ipAddress: request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown",
+          userAgent: request.headers.get("user-agent") || undefined,
         },
       });
 
@@ -144,7 +144,7 @@ export async function PUT(request: NextRequest) {
     const passwordHash = await hashPassword(newPassword);
 
     // Update password and delete token
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: any) => {
       // Update user password
       await tx.user.update({
         where: { id: user.id },
@@ -170,8 +170,8 @@ export async function PUT(request: NextRequest) {
     // Log audit event
     await AuditLogger.logAuth("PASSWORD_CHANGE", user.id, {
       userRole: user.role,
-      ipAddress: request.ip,
-      userAgent: request.headers.get("user-agent"),
+      ipAddress: request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown",
+      userAgent: request.headers.get("user-agent") || undefined,
     });
 
     logger.info(

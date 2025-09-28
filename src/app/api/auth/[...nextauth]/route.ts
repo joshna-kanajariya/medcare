@@ -38,7 +38,7 @@ const handler = NextAuth({
 
           // Verify password
           const isValidPassword = await verifyPassword(
-            credentials.password,
+            credentials.password as string,
             user.passwordHash
           );
 
@@ -170,7 +170,7 @@ const handler = NextAuth({
       if (user) {
         // First sign in
         token.role = (user as any).role;
-        token.userId = user.id;
+        token.userId = user.id as string;
         token.isVerified = (user as any).isVerified;
       }
 
@@ -222,11 +222,6 @@ const handler = NextAuth({
 
   session: {
     strategy: "jwt",
-    maxAge: env.SESSION_MAX_AGE,
-  },
-
-  jwt: {
-    secret: env.NEXTAUTH_SECRET,
     maxAge: env.SESSION_MAX_AGE,
   },
 

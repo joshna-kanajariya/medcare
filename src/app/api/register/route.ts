@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     const passwordHash = await hashPassword(data.password);
 
     // Start transaction to create user and profile
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       // Create user
       const user = await tx.user.create({
         data: {
@@ -126,8 +126,8 @@ export async function POST(request: NextRequest) {
         role: data.role,
       },
       context: {
-        ipAddress: request.ip,
-        userAgent: request.headers.get("user-agent"),
+        ipAddress: request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown",
+        userAgent: request.headers.get("user-agent") || undefined,
       },
     });
 
@@ -207,7 +207,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update user verification status
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: any) => {
       await tx.user.update({
         where: { id: user.id },
         data: { isVerified: true },
@@ -226,8 +226,8 @@ export async function PUT(request: NextRequest) {
       resourceId: user.id,
       newValues: { isVerified: true },
       context: {
-        ipAddress: request.ip,
-        userAgent: request.headers.get("user-agent"),
+        ipAddress: request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown",
+        userAgent: request.headers.get("user-agent") || undefined,
       },
     });
 

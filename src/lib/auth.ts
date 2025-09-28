@@ -38,7 +38,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           // Verify password
           const isValidPassword = await verifyPassword(
-            credentials.password,
+            credentials.password as string,
             user.passwordHash
           );
 
@@ -114,7 +114,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.role = (user as any).role;
-        token.userId = user.id;
+        token.userId = user.id as string;
         token.isVerified = (user as any).isVerified;
       }
       return token;

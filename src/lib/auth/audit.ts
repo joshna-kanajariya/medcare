@@ -5,8 +5,8 @@ import type { AuditAction, UserRole } from "../../generated/prisma";
 export interface AuditContext {
   userId?: string;
   userRole?: UserRole;
-  ipAddress?: string;
-  userAgent?: string;
+  ipAddress?: string | null;
+  userAgent?: string | null;
   sessionId?: string;
 }
 
@@ -283,7 +283,7 @@ export class AuditLogger {
     return {
       actionSummary: summary,
       topActiveUsers: userActivity,
-      totalEvents: summary.reduce((sum, item) => sum + item._count.id, 0),
+      totalEvents: summary.reduce((sum: number, item: any) => sum + item._count.id, 0),
     };
   }
 
