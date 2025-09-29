@@ -11,19 +11,26 @@ import { signOut } from "next-auth/react";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
+  session?: any; // For demo purposes
 }
 
-export function DashboardLayout({ children }: DashboardLayoutProps) {
-  const { data: session } = useSession();
+export function DashboardLayout({ children, session: propSession }: DashboardLayoutProps) {
+  const { data: sessionData } = useSession();
+  const session = propSession || sessionData; // Use prop session if provided, otherwise use hook
 
   const handleSignOut = async () => {
-    await signOut({ redirect: true, callbackUrl: "/" });
+    if (propSession) {
+      // Demo mode - just redirect to home
+      window.location.href = "/";
+    } else {
+      await signOut({ redirect: true, callbackUrl: "/" });
+    }
   };
 
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
-      <Sidebar />
+      <Sidebar session={session} />
       
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">

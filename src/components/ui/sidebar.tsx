@@ -25,9 +25,11 @@ import {
 } from "lucide-react";
 import { Button } from "./button";
 import { cn } from "@/lib/utils";
+import { GlobalSearch } from "./global-search";
 
 interface SidebarProps {
   className?: string;
+  session?: any; // For demo purposes
 }
 
 interface NavItem {
@@ -103,8 +105,9 @@ const navigationItems: NavItem[] = [
   }
 ];
 
-export function Sidebar({ className }: SidebarProps) {
-  const { data: session } = useSession();
+export function Sidebar({ className, session: propSession }: SidebarProps) {
+  const { data: sessionData } = useSession();
+  const session = propSession || sessionData; // Use prop session if provided, otherwise use hook
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
 
@@ -150,14 +153,7 @@ export function Sidebar({ className }: SidebarProps) {
       {/* Search */}
       {!isCollapsed && (
         <div className="p-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="search"
-              placeholder="Search patients, records..."
-              className="w-full rounded-md border border-outline bg-background pl-10 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-            />
-          </div>
+          <GlobalSearch placeholder="Search patients, records..." />
         </div>
       )}
 
