@@ -14,6 +14,7 @@ const PUBLIC_ROUTES = [
   "/auth/verify-request",
   "/api/auth",
   "/api/health",
+  "/demo", // Demo page for showcasing dashboard
 ];
 
 // Route permission mappings
