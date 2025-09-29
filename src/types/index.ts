@@ -51,6 +51,101 @@ export interface MedicalRecord {
   updatedAt: Date
 }
 
+// Authentication types
+export interface User {
+  id: string;
+  email: string;
+  phone?: string | null;
+  role: UserRole;
+  isActive: boolean;
+  isVerified: boolean;
+  lastLoginAt?: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface UserProfile {
+  id: string;
+  userId: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth?: Date | null;
+  gender?: string | null;
+  address?: string | null;
+  emergencyContact?: string | null;
+  specialization?: string | null;
+  licenseNumber?: string | null;
+  departmentId?: number | null;
+  hospitalId?: number | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type UserRole = 
+  | 'ADMIN'
+  | 'DOCTOR'
+  | 'NURSE'
+  | 'STAFF'
+  | 'PATIENT'
+  | 'PHARMACIST';
+
+export type AuditAction =
+  | 'CREATE'
+  | 'READ'
+  | 'UPDATE'
+  | 'DELETE'
+  | 'LOGIN'
+  | 'LOGOUT'
+  | 'PASSWORD_CHANGE'
+  | 'PERMISSION_GRANT'
+  | 'PERMISSION_REVOKE'
+  | 'ACCOUNT_LOCK'
+  | 'ACCOUNT_UNLOCK';
+
+export type TokenType =
+  | 'EMAIL_VERIFICATION'
+  | 'PASSWORD_RESET'
+  | 'PHONE_VERIFICATION'
+  | 'TWO_FACTOR';
+
+// NextAuth types extension
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      role: UserRole;
+      isVerified: boolean;
+      profile?: {
+        firstName: string;
+        lastName: string;
+        hospitalId?: number;
+        departmentId?: number;
+      };
+      email?: string | null;
+      image?: string | null;
+    };
+  }
+
+  interface User {
+    role: UserRole;
+    isVerified: boolean;
+    profile?: {
+      firstName: string;
+      lastName: string;
+      hospitalId?: number;
+      departmentId?: number;
+    };
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    userId: string;
+    role: UserRole;
+    isVerified: boolean;
+  }
+}
+
 // API Response types
 export interface ApiResponse<T = unknown> {
   success: boolean

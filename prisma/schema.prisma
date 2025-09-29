@@ -16,6 +16,7 @@ model Hospital {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   departments Department[]
+  userProfiles UserProfile[]
 }
 
 model Department {
@@ -28,10 +29,164 @@ model Department {
   hospital    Hospital     @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
   doctors     Doctor[]
   appointments Appointment[]
+  userProfiles UserProfile[]
+}
+
+// Authentication and User Management Models
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  phone         String?   @unique
+  passwordHash  String?
+  role          UserRole
+  isActive      Boolean   @default(true)
+  isVerified    Boolean   @default(false)
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  accounts      Account[]
+  sessions      Session[]
+  userProfiles  UserProfile?
+  auditLogs     AuditLog[]
+  twoFactorAuth TwoFactorAuth?
+  patient       Patient?
+  doctor        Doctor?
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  id         String   @id @default(cuid())
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  type       TokenType @default(EMAIL_VERIFICATION)
+  createdAt  DateTime @default(now())
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model TwoFactorAuth {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  secret          String
+  backupCodes     String?  @db.Text
+  isEnabled       Boolean  @default(false)
+  lastUsedAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("two_factor_auth")
+}
+
+model UserProfile {
+  id             String    @id @default(cuid())
+  userId         String    @unique
+  firstName      String
+  lastName       String
+  dateOfBirth    DateTime?
+  gender         String?
+  address        String?
+  emergencyContact String?
+  specialization String?   // For medical staff
+  licenseNumber  String?   @unique // For medical staff
+  departmentId   Int?
+  hospitalId     Int?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  hospital   Hospital?   @relation(fields: [hospitalId], references: [id], onDelete: SetNull)
+
+  @@map("user_profiles")
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  resource    String   // e.g., 'patients', 'appointments', 'medical_records'
+  action      String   // e.g., 'read', 'write', 'delete'
+  createdAt   DateTime @default(now())
+
+  rolePermissions RolePermission[]
+
+  @@unique([resource, action])
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String @id @default(cuid())
+  role         UserRole
+  permissionId String
+
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([role, permissionId])
+  @@map("role_permissions")
+}
+
+model AuditLog {
+  id          String      @id @default(cuid())
+  userId      String?
+  action      AuditAction
+  resource    String
+  resourceId  String?
+  oldValues   Json?
+  newValues   Json?
+  ipAddress   String?
+  userAgent   String?
+  timestamp   DateTime    @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
 }
 
 model Patient {
   id             String        @id @default(cuid())
+  userId         String?       @unique // Link to User for patient accounts
   hospitalId     Int?
   firstName      String
   lastName       String
@@ -46,6 +201,7 @@ model Patient {
   appointments   Appointment[]
   medicalRecords MedicalRecord[]
   hospital       Hospital?     @relation(fields: [hospitalId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  user           User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@map("patients")
 }
@@ -79,8 +235,39 @@ enum AppointmentStatus {
   CANCELLED
 }
 
+enum UserRole {
+  ADMIN
+  DOCTOR
+  NURSE
+  STAFF
+  PATIENT
+  PHARMACIST
+}
+
+enum TokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+  PHONE_VERIFICATION
+  TWO_FACTOR
+}
+
+enum AuditAction {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  PASSWORD_CHANGE
+  PERMISSION_GRANT
+  PERMISSION_REVOKE
+  ACCOUNT_LOCK
+  ACCOUNT_UNLOCK
+}
+
 model Doctor {
   id             String       @id @default(cuid())
+  userId         String?      @unique // Link to User for doctor accounts
   hospitalId     Int?
   departmentId   Int?
   firstName      String
@@ -96,6 +283,7 @@ model Doctor {
   medicalRecords MedicalRecord[]
   hospital       Hospital?    @relation(fields: [hospitalId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   department     Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@map("doctors")
 }
