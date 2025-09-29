@@ -185,17 +185,49 @@
   :root {
     --background: #020617;
     --foreground: #f8fafc;
-    --surface: rgba(15, 23, 42, 0.75);
-    --surface-muted: rgba(15, 23, 42, 0.55);
+    --surface: rgba(15, 23, 42, 0.95);
+    --surface-muted: rgba(15, 23, 42, 0.75);
     --outline: rgba(148, 163, 184, 0.45);
-    --muted: #cbd5f5;
-    --muted-foreground: #e2e8f0;
+    --muted: #94a3b8;
+    --muted-foreground: #cbd5e1;
     --border: rgba(148, 163, 184, 0.35);
-    --card: rgba(15, 23, 42, 0.75);
+    --card: rgba(15, 23, 42, 0.95);
     --card-foreground: #f8fafc;
     --shadow-soft: 0 20px 32px -16px rgba(14, 165, 233, 0.55);
     --shadow-hard: 0 38px 80px -20px rgba(33, 150, 243, 0.45);
+    
+    /* Ensure good contrast for healthcare themes */
+    --primary: #38bdf8;
+    --success: #4ade80;
+    --warning: #fbbf24;
+    --danger: #f87171;
   }
+}
+
+/* Dark theme overrides */
+.dark {
+  --background: #020617;
+  --foreground: #f8fafc;
+  --surface: rgba(15, 23, 42, 0.95);
+  --surface-muted: rgba(15, 23, 42, 0.75);
+  --outline: rgba(148, 163, 184, 0.45);
+  --muted: #94a3b8;
+  --muted-foreground: #cbd5e1;
+  --border: rgba(148, 163, 184, 0.35);
+  --card: rgba(15, 23, 42, 0.95);
+  --card-foreground: #f8fafc;
+  --shadow-soft: 0 20px 32px -16px rgba(14, 165, 233, 0.55);
+  --shadow-hard: 0 38px 80px -20px rgba(33, 150, 243, 0.45);
+  
+  /* Healthcare-specific dark mode colors */
+  --primary: #38bdf8;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --emergency-red: #f87171;
+  --critical-amber: #fbbf24;
+  --stable-green: #4ade80;
+  --medical-blue: #38bdf8;
 }
 
 body {
@@ -254,4 +286,144 @@ a {
 .focus-medical:focus {
   outline: 2px solid var(--medical-blue);
   outline-offset: 2px;
+}
+
+/* Enhanced focus styles for better accessibility */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --outline: #000000;
+    --border: #000000;
+    --muted-foreground: #000000;
+  }
+  
+  .dark {
+    --outline: #ffffff;
+    --border: #ffffff;
+    --muted-foreground: #ffffff;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Healthcare status indicators */
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.status-critical {
+  background-color: var(--emergency-red);
+  animation: pulse 2s infinite;
+}
+
+.status-warning {
+  background-color: var(--critical-amber);
+}
+
+.status-stable {
+  background-color: var(--stable-green);
+}
+
+.status-info {
+  background-color: var(--medical-blue);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Better button hover states for healthcare UI */
+.medical-button:hover {
+  background: var(--primary-700);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-soft);
+}
+
+.medical-button:active {
+  transform: translateY(0);
+}
+
+/* Screen reader only content */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Touch targets for mobile */
+@media (max-width: 768px) {
+  button,
+  [role="button"],
+  input[type="button"],
+  input[type="submit"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* High contrast borders for cards in healthcare context */
+.medical-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease-in-out;
+}
+
+.medical-card:hover {
+  box-shadow: var(--shadow-soft);
+  transform: translateY(-2px);
+}
+
+/* Emergency alert styles */
+.alert-emergency {
+  background: linear-gradient(135deg, var(--danger-50) 0%, var(--danger-100) 100%);
+  border: 2px solid var(--danger);
+  animation: alertPulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes alertPulse {
+  from {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  to {
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
 }
